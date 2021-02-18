@@ -1,9 +1,15 @@
 import subprocess
 from pyfiglet import figlet_format
 from termcolor import cprint
+import yaml
+from multiprocessing import Pool
+import os
+import requests
 
 
 logo = 'Git-Commands'
+api = "https://circuitalminds.herokuapp.com/api/"
+token = "circuitalminds"
 
 
 class Color:
@@ -145,11 +151,34 @@ def stash():
         print("\nUse " + cmd)
 
 
+def get_info():
+    repos = requests.get(api + "repos?token=" + token + "&option=get").json()
+    for repo in list(repos.keys()):
+        print(repo + " : " + repos[repo]["url"] + "\n")
+
+
+def clone_simultaneously():
+    containers = yaml.load(requests.get(
+        api + "repos?token=" + token + "&name=alanmatzumiya/containers&option=get").text, Loader=yaml.FullLoader
+                           ).get("alanmatzumiya/containers")
+    options = ["img", "music"]
+    processes = tuple(
+        "git clone -b " + "music_" + str(j) + " " + containers.get("url") + " music_" + str(j) for j in range(1, 11))
+    '''''
+    def run_process(process):
+        os.system('git clone {}'.format(process))
+
+    pool = Pool(processes=len(processes))
+    pool.map(run_process, processes)
+    '''''
+    print(processes)
+
+
 def main():
     cprint(figlet_format(logo, font='slant'), 'green')
     print(info + "\n")
 
-    choices = 'clone, commit, branch, pull, fetch, merge, reset, blame and stash'
+    choices = 'get info, clone, clone containers, commit, branch, pull, fetch, merge, reset, blame and stash'
     print("Commands to use: " + choices)
 
     choose_command = input("Type in the command you want to use: ")
@@ -157,6 +186,12 @@ def main():
 
     if choose_command == "clone":
         clone()
+
+    elif choose_command == "get info":
+        get_info()
+
+    elif choose_command == "clone containers":
+        clone_simultaneously()
 
     elif choose_command == "commit":
         commit()
